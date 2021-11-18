@@ -1,4 +1,4 @@
-// 123456 Familyname, Firstname
+// 899130 Tiainen, Toni
 
 package reactor
 
@@ -6,16 +6,37 @@ import reactor.api.Event
 
 final class BlockingEventQueue[T] (private val capacity: Int) {
 
-  @throws[InterruptedException]
-  def enqueue[U <: T](e: Event[U]): Unit = ???
+  if (capacity <= 0) {
+    throw new IllegalArgumentException("capacity must be positive")
+  }
+
+  val queue = Queue[T]()
 
   @throws[InterruptedException]
-  def dequeue: Event[T] = ???
+  def enqueue[U <: T](e: Event[U]): Unit = synchronized {
+    while (queue.length == capacity) {
+      wait()
+    }
+
+    queue.enqueue(e)
+    notifyAll()
+  }
+
+  @throws[InterruptedException]
+  def dequeue: Event[T] = synchronized {
+    while (queue.isEmpty) {
+      wait()
+    }
+
+    var e = queue.dequeue()
+    notifyAll()
+    e
+  }
 
   def getAll: Seq[Event[T]] = ???
 
-  def getSize: Int = ???
+  def getSize: Int = queue.length
 
-  def getCapacity: Int = ???
+  def getCapacity: Int = capacity
 
 }
