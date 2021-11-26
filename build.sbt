@@ -6,5 +6,7 @@ scalaVersion := "2.13.6"
 
 libraryDependencies += "org.scalatest" %% "scalatest-funsuite" % "3.2.0"
 
+scalacOptions ++= Seq("-deprecation")
+
 // Define the main method
 Compile / run / mainClass := Some("hangman.HangmanGame")
