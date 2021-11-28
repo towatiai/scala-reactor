@@ -47,14 +47,23 @@ final class Dispatcher(private val queueLength: Int = 10) {
     
   }
 
+  // Needs to be synchronized, because if we are trying to register the same
+  // handle multiple times in multiple threads, both threads could get pass the
+  // "contains" check and try to register their handle.
   def addHandler[T](h: EventHandler[T]): Unit = synchronized {
     var handleThread = new WorkerThread[T](h, queue)
+    if (handlers.contains(h)) {
+      println("Handle already registered.")
+      return
+    }
     handlers += (h -> handleThread)
 
     // Handle thread starts reading messages
     handleThread.start()
   }
 
+  // Synchronized, because there is an interleaving, where we deregister a handle,
+  // and switch to running that specific handle thread enqueueing messages.
   def removeHandler[T](h: EventHandler[T]): Unit = synchronized {
     var handleThread = handlers.remove(h).get
     handleThread.interrupt()

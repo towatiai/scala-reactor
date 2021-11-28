@@ -118,6 +118,7 @@ class ReactorSemanticsTest extends AnyFunSuite with TimeLimitedTests {
     val c1 = new TestContext(d1)
     val c2 = new TestContext(d2)
     d1.addHandler(c1.handler)
+    d1.addHandler(c1.handler)
     d2.addHandler(c2.handler)
 
     d1.handleEvents()
