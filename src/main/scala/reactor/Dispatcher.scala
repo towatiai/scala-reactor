@@ -20,11 +20,7 @@ final class Dispatcher(private val queueLength: Int = 10) {
       // If the data is null, the event handler is removed.
       while (!handlers.isEmpty) {
         var event = select
-        if (event.getEvent == null) {
-          removeHandler(event.getHandler)
-        } else {
-          event.handle()  
-        }
+        event.handle()
       }
     } catch {
       case e: InterruptedException => {
