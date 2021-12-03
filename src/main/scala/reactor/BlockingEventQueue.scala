@@ -6,22 +6,23 @@ import reactor.api.Event
 import scala.collection.mutable.Queue
 
 final class BlockingEventQueue[T] (private val capacity: Int) {
+  require(capacity > 0)
 
-  if (capacity <= 0) {
-    throw new IllegalArgumentException("Capacity must be positive.")
-  }
+
 
   val queue = Queue[Event[T]]()
 
   @throws[InterruptedException]
   def enqueue[U <: T](e: Event[U]): Unit = {
+    require(e != null)
+
 
     // Synchonized to make sure if a thread is released from the
     // while condition, it must modify the queue before any other thread
     // is allowed to try releasing.
     try synchronized {
 
-      // While condition makes sure that this thread is released only
+      // "While" condition makes sure that this thread is released only
       // when there is room in the queue.
       while (queue.length == capacity) {
         wait()
@@ -32,9 +33,11 @@ final class BlockingEventQueue[T] (private val capacity: Int) {
       queue.enqueue(e.asInstanceOf[Event[T]])
 
       // We use notifyAll, because notifying just one thread might
-      // wake another enqueue thread, which might not able to continue.
+      // wake another enqueue thread, which might not able to continue
+      // (if the queue is full -> deadlock).
       notifyAll()
     } catch {
+      // No actions required, so the initial error is thrown
       case e: InterruptedException => throw e
     }
     
@@ -64,13 +67,13 @@ final class BlockingEventQueue[T] (private val capacity: Int) {
 
   // Converts the queue to sequence and clears the queue.
   // Syncrhonized guarantees that no events that aren't
-  // included in the sequence are removed.
+  // included in the returned sequence are removed.
   def getAll: Seq[Event[T]] = synchronized {
     var sequence = queue.toSeq
     queue.clear()
     // Because the queue is modified, it would be wise to notify
     // threads that might be waiting for room to enqueue.
-    // notifyAll()
+    notifyAll()
     sequence
   }
 
